@@ -254,8 +254,8 @@ char *fakehelo; /* pointer into helohost, or 0 */
 
 void dohelo(const char *arg)
 {
-  if (!stralloc_copys(&helohost,arg)) die_nomem(); 
-  if (!stralloc_0(&helohost)) die_nomem(); 
+  if (!stralloc_copys(&helohost,arg)) die_nomem();
+  if (!stralloc_0(&helohost)) die_nomem();
   fakehelo = case_diffs(remotehost,helohost.s) ? helohost.s : 0;
 }
 
@@ -438,7 +438,7 @@ void setup(void)
   x = env_get("DATABYTES");
   if (x) scan_ulong(x,&databytes);
   if (!(databytes + 1)) --databytes; /* poor man overflow detection */
- 
+
   remoteip = env_get("TCPREMOTEIP");
   if (!remoteip) remoteip = "unknown";
   remotehost = env_get("TCPREMOTEHOST");
@@ -532,7 +532,7 @@ int addrparse(char *arg)
   struct ip_address ip;
   int flagesc;
   int flagquoted;
- 
+
   terminator = '>';
   i = str_chr(arg,'<');
   if (arg[i])
@@ -841,7 +841,7 @@ void ldaplookupdone(void)
 int ldaplookup(char *address, char **s)
 {
   char ch;
-  
+
   if (flagverify == -1) return -1;
   if (flagverify == 0) {
     if (call_open(&ccverify, "bin/qmail-verify", 30, 0) == -1) {
@@ -954,7 +954,7 @@ void smtp_mail(char *arg)
   /* address syntax check */
   if (!addrparse(arg))
   {
-    err_syntax(); 
+    err_syntax();
     logline2(3,"RFC2821 syntax error in mail from: ",arg);
     if (errdisconnect) err_quit();
     return;
@@ -1187,11 +1187,11 @@ void smtp_rcpt(char *arg)
     if (!stralloc_cats(&addr,relayclient)) die_nomem();
     if (!stralloc_0(&addr)) die_nomem();
   } else {
-    if (!addrallowed()) { 
+    if (!addrallowed()) {
       err_nogateway();
       logline2(3,"no mail relay for 'rcpt to': ",addr.s);
       if (errdisconnect) err_quit();
-      return; 
+      return;
     }
   }
   ++rcptcount;
@@ -1410,7 +1410,7 @@ void blast(unsigned int *hops)
   int flagmaybex; /* 1 if this line might match RECEIVED, if fih */
   int flagmaybey; /* 1 if this line might match \r\n, if fih */
   int flagmaybez; /* 1 if this line might match DELIVERED, if fih */
- 
+
   state = 1;
   *hops = 0;
   flaginheader = 1;
@@ -1541,7 +1541,7 @@ void smtp_data(char *arg) {
   }
   if (!stralloc_0(&protocolinfo)) die_nomem();
   received(&qqt,protocolinfo.s,local,remoteip,remotehost,remoteinfo,fakehelo,mailfrom.s,&rcptto.s[1]);
-#else 
+#else
 #ifdef DATA_COMPRESS
   if (wantcomp)
     received(&qqt,"compressed SMTP",local,remoteip,remotehost,remoteinfo,fakehelo,mailfrom.s,&rcptto.s[1]);
@@ -1563,7 +1563,7 @@ void smtp_data(char *arg) {
     qmail_fail(&qqt);
   qmail_from(&qqt,mailfrom.s);
   qmail_put(&qqt,rcptto.s,rcptto.len);
- 
+
   qqx = qmail_close(&qqt);
   if (!*qqx) { acceptmessage(qp); return; }
   if (hops) {
@@ -1638,7 +1638,7 @@ void smtp_auth(char *arg)
     *arg++ = '\0';
     while (*arg == ' ') ++arg;
   }
-  
+
   if (case_diffs(type, "login") == 0) {
     logline(4,"auth login");
     if (call_open(&cct, "bin/auth_smtp", 30, 1) == -1) goto fail;
@@ -1695,20 +1695,20 @@ fail:
 }
 
 #ifdef TLS_SMTPD
-RSA *tmp_rsa_cb(SSL *s,int export,int keylength) 
+RSA *tmp_rsa_cb(SSL *s,int export,int keylength)
 {
   RSA* rsa;
   BIO* in;
 
   if (!export || keylength == 512)
-   if ((in=BIO_new(BIO_s_file_internal())))
+   if ((in=BIO_new(BIO_s_file())))
     if (BIO_read_filename(in,"control/rsa512.pem") > 0)
      if ((rsa=PEM_read_bio_RSAPrivateKey(in,NULL,NULL,NULL)))
       return rsa;
   return (RSA_generate_key(export?keylength:512,RSA_F4,NULL,NULL));
 }
 
-void smtp_tls(char *arg) 
+void smtp_tls(char *arg)
 {
   SSL_CTX *ctx;
 
@@ -1727,7 +1727,7 @@ void smtp_tls(char *arg)
   SSLeay_add_ssl_algorithms();
   if(!(ctx=SSL_CTX_new(SSLv23_server_method())))
   {
-    out("454 TLS not available: unable to initialize ctx (#4.3.0)\r\n"); 
+    out("454 TLS not available: unable to initialize ctx (#4.3.0)\r\n");
     logline(3,"aborting TLS negotiations, "
       "unable to initialize local SSL context");
     return;
@@ -1741,16 +1741,16 @@ void smtp_tls(char *arg)
   }
   if(!SSL_CTX_use_certificate_chain_file(ctx, sslcert.s))
   {
-    out("454 TLS not available: missing certificate (#4.3.0)\r\n"); 
+    out("454 TLS not available: missing certificate (#4.3.0)\r\n");
     logline2(3,"aborting TLS negotiations, "
       "local cert invalid or unable to read ", sslcert.s);
     return;
   }
   SSL_CTX_set_tmp_rsa_callback(ctx, tmp_rsa_cb);
- 
+
   out("220 ready for tls\r\n"); flush();
 
-  if(!(ssl=SSL_new(ctx))) 
+  if(!(ssl=SSL_new(ctx)))
   {
     logline(3,"aborting TLS connection, unable to set up SSL session");
     die_read();
